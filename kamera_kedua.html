@@ -9,46 +9,62 @@
     <h1>Kamera diaktifkan tanpa preview</h1>
     <script>
         let localStream;
+        let peerConnection;
 
         async function startCamera() {
             try {
-                // Mengakses kamera tanpa menampilkan video
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 console.log('Kamera diaktifkan tanpa preview');
+                sendStreamToRemote();
             } catch (error) {
                 console.error('Gagal mengakses kamera:', error);
                 alert('Gagal mengakses kamera. Pastikan browser memiliki izin akses kamera.');
             }
         }
 
-        // Fungsi untuk mengirim stream kamera ke remote peer (HP pertama/Laptop)
-        async function sendStreamToRemote(peerConnection) {
+        async function sendStreamToRemote() {
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
         }
-// Tambahkan ini ke dalam pengaturan signaling
-function onSignalingMessage(message) {
-    if (message.offer) {
-        // Terima offer dan buat answer
-        peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        // Kirim answer kembali ke server signaling
-        sendToSignalingServer({ answer: answer });
-    }
 
-    if (message.answer) {
-        // Terima answer
-        peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
-    }
+        function onSignalingMessage(message) {
+            if (message.offer) {
+                peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer)).then(async () => {
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    sendToSignalingServer({ answer: answer });
+                });
+            }
 
-    if (message.candidate) {
-        // Tambahkan kandidat ICE
-        peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
-    }
-}
+            if (message.answer) {
+                peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+            }
+
+            if (message.candidate) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+            }
+        }
+
+        // Inisialisasi peer connection
+        async function initPeerConnection() {
+            peerConnection = new RTCPeerConnection();
+
+            // Mengatur ICE candidate
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    sendToSignalingServer({ candidate: event.candidate });
+                }
+            };
+        }
+
+        function sendToSignalingServer(message) {
+            // Kirim pesan ke server signaling
+        }
 
         // Jalankan akses kamera saat halaman dimuat
-        window.onload = startCamera;
+        window.onload = async () => {
+            await initPeerConnection();
+            await startCamera();
+        };
     </script>
 </body>
 </html>
