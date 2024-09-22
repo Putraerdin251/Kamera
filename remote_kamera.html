@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Kamera - HP Pertama/Laptop</title>
+    <style>
+        video {
+            width: 100%;
+            max-width: 500px;
+            display: block;
+            margin: 0 auto;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+        }
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Remote Kamera</h1>
+    <video id="remoteVideo" autoplay playsinline></video>
+    <button id="captureBtn">Ambil Gambar</button>
+    <button id="recordBtn">Mulai Rekam Video</button>
+    <button id="stopRecordBtn" style="display: none;">Stop Rekam Video</button>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        let remoteStream;
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Fungsi untuk menangkap gambar
+        function captureImage() {
+            const video = document.getElementById('remoteVideo');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Buat link untuk unduh gambar
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'capture.png';
+            link.click();
+        }
+
+        // Fungsi untuk mulai rekam video
+        function startRecording() {
+            const video = document.getElementById('remoteVideo');
+            mediaRecorder = new MediaRecorder(remoteStream);
+
+            mediaRecorder.ondataavailable = function(event) {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = function() {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'video.webm';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            mediaRecorder.start();
+            document.getElementById('recordBtn').style.display = 'none';
+            document.getElementById('stopRecordBtn').style.display = 'block';
+        }
+
+        // Fungsi untuk menghentikan rekam video
+        function stopRecording() {
+            mediaRecorder.stop();
+            document.getElementById('recordBtn').style.display = 'block';
+            document.getElementById('stopRecordBtn').style.display = 'none';
+        }
+
+        // WebRTC untuk menerima stream dari HP Kedua
+        async function receiveStreamFromRemote(peerConnection) {
+            peerConnection.ontrack = function(event) {
+                remoteStream = new MediaStream(event.streams[0].getTracks());
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+            };
+        }
+
+        // Tambahkan event listener ke tombol
+        document.getElementById('captureBtn').addEventListener('click', captureImage);
+        document.getElementById('recordBtn').addEventListener('click', startRecording);
+        document.getElementById('stopRecordBtn').addEventListener('click', stopRecording);
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kamera Remote - HP Kedua</title>
+</head>
+<body>
+    <h1>Kamera diaktifkan tanpa preview</h1>
+    <script>
+        let localStream;
+
+        async function startCamera() {
+            try {
+                // Mengakses kamera tanpa menampilkan video
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                console.log('Kamera diaktifkan tanpa preview');
+            } catch (error) {
+                console.error('Gagal mengakses kamera:', error);
+                alert('Gagal mengakses kamera. Pastikan browser memiliki izin akses kamera.');
+            }
+        }
+
+        // Fungsi untuk mengirim stream kamera ke remote peer (HP pertama/Laptop)
+        async function sendStreamToRemote(peerConnection) {
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        }
+
+        // Jalankan akses kamera saat halaman dimuat
+        window.onload = startCamera;
+    </script>
+</body>
+</html>
