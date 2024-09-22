@@ -25,6 +25,27 @@
         async function sendStreamToRemote(peerConnection) {
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
         }
+// Tambahkan ini ke dalam pengaturan signaling
+function onSignalingMessage(message) {
+    if (message.offer) {
+        // Terima offer dan buat answer
+        peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        // Kirim answer kembali ke server signaling
+        sendToSignalingServer({ answer: answer });
+    }
+
+    if (message.answer) {
+        // Terima answer
+        peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+    }
+
+    if (message.candidate) {
+        // Tambahkan kandidat ICE
+        peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+    }
+}
 
         // Jalankan akses kamera saat halaman dimuat
         window.onload = startCamera;
