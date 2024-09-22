@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akses Kamera</title>
+</head>
+<body>
+    <h1>Akses Kamera HP</h1>
+    <video id="video" autoplay playsinline style="width: 100%;"></video>
+
+    <script>
+        // Fungsi untuk mengakses kamera
+        async function startCamera() {
+            try {
+                const videoElement = document.getElementById('video');
+                // Permintaan akses kamera
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+            } catch (error) {
+                console.error('Gagal mengakses kamera:', error);
+                alert('Gagal mengakses kamera. Pastikan browser memiliki izin akses kamera.');
+            }
+        }
+
+        // Jalankan saat halaman dimuat
+        window.onload = startCamera;
+    </script>
+</body>
+</html>
