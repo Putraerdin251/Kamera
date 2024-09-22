@@ -26,13 +26,13 @@
     <button id="captureBtn">Ambil Gambar</button>
     <button id="recordBtn">Mulai Rekam Video</button>
     <button id="stopRecordBtn" style="display: none;">Stop Rekam Video</button>
-
     <canvas id="canvas"></canvas>
 
     <script>
         let remoteStream;
         let mediaRecorder;
         let recordedChunks = [];
+        let peerConnection;
 
         // Fungsi untuk menangkap gambar
         function captureImage() {
@@ -52,7 +52,6 @@
 
         // Fungsi untuk mulai rekam video
         function startRecording() {
-            const video = document.getElementById('remoteVideo');
             mediaRecorder = new MediaRecorder(remoteStream);
 
             mediaRecorder.ondataavailable = function(event) {
@@ -90,6 +89,16 @@
                 document.getElementById('remoteVideo').srcObject = remoteStream;
             };
         }
+
+        // Inisialisasi peer connection
+        async function initPeerConnection() {
+            peerConnection = new RTCPeerConnection();
+            await receiveStreamFromRemote(peerConnection);
+            // Tambahkan kode untuk signaling (offer/answer) di sini
+        }
+
+        // Jalankan saat halaman dimuat
+        window.onload = initPeerConnection;
 
         // Tambahkan event listener ke tombol
         document.getElementById('captureBtn').addEventListener('click', captureImage);
