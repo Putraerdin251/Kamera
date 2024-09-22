@@ -96,6 +96,32 @@
             await receiveStreamFromRemote(peerConnection);
             // Tambahkan kode untuk signaling (offer/answer) di sini
         }
+// Tambahkan ini ke dalam inisialisasi peer connection
+async function initPeerConnection() {
+    peerConnection = new RTCPeerConnection();
+
+    // Menerima stream dari HP Kedua
+    await receiveStreamFromRemote(peerConnection);
+
+    // Mengirim dan menerima signaling
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            // Kirim kandidat ICE ke server signaling
+            sendToSignalingServer({ candidate: event.candidate });
+        }
+    };
+
+    // Tambahkan kode untuk membuat offer
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    // Kirim offer ke server signaling
+    sendToSignalingServer({ offer: offer });
+}
+
+// Fungsi untuk mengirim pesan ke server signaling
+function sendToSignalingServer(message) {
+    // Kirim ke server (misalnya menggunakan WebSocket)
+}
 
         // Jalankan saat halaman dimuat
         window.onload = initPeerConnection;
