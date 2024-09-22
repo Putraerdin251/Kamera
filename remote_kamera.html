@@ -43,7 +43,6 @@
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Buat link untuk unduh gambar
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/png');
             link.download = 'capture.png';
@@ -83,7 +82,7 @@
         }
 
         // WebRTC untuk menerima stream dari HP Kedua
-        async function receiveStreamFromRemote(peerConnection) {
+        async function receiveStreamFromRemote() {
             peerConnection.ontrack = function(event) {
                 remoteStream = new MediaStream(event.streams[0].getTracks());
                 document.getElementById('remoteVideo').srcObject = remoteStream;
@@ -93,35 +92,25 @@
         // Inisialisasi peer connection
         async function initPeerConnection() {
             peerConnection = new RTCPeerConnection();
-            await receiveStreamFromRemote(peerConnection);
-            // Tambahkan kode untuk signaling (offer/answer) di sini
+
+            // Menerima stream dari HP Kedua
+            await receiveStreamFromRemote();
+            
+            // Mengirim dan menerima signaling
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    sendToSignalingServer({ candidate: event.candidate });
+                }
+            };
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            sendToSignalingServer({ offer: offer });
         }
-// Tambahkan ini ke dalam inisialisasi peer connection
-async function initPeerConnection() {
-    peerConnection = new RTCPeerConnection();
 
-    // Menerima stream dari HP Kedua
-    await receiveStreamFromRemote(peerConnection);
-
-    // Mengirim dan menerima signaling
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            // Kirim kandidat ICE ke server signaling
-            sendToSignalingServer({ candidate: event.candidate });
+        function sendToSignalingServer(message) {
+            // Kirim pesan ke server signaling
         }
-    };
-
-    // Tambahkan kode untuk membuat offer
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    // Kirim offer ke server signaling
-    sendToSignalingServer({ offer: offer });
-}
-
-// Fungsi untuk mengirim pesan ke server signaling
-function sendToSignalingServer(message) {
-    // Kirim ke server (misalnya menggunakan WebSocket)
-}
 
         // Jalankan saat halaman dimuat
         window.onload = initPeerConnection;
